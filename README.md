@@ -7,29 +7,6 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green.svg)](https://www.mongodb.com/)
 
-## 📸 Application Screenshots
-
-<div align="center">
-
-### LLM Cost Calculator
-![LLM Cost Calculator](Screenshot 2025-07-23 at 3.37.05 AM.png)
-
-### Usage Estimator
-![Usage Estimator](Screenshot%202025-07-23%20at%203.37.26%20AM.png)
-
-### Model Comparison
-![Model Comparison](Screenshot%202025-07-23%20at%203.37.39%20AM.png)
-
-### Comprehensive Analysis
-![Comprehensive Analysis](Screenshot%202025-07-23%20at%203.37.50%20AM.png)
-
-### Model Management
-![Model Management](Screenshot%202025-07-23%20at%203.38.01%20AM.png)
-
-### Personal Assistant Chat
-![Personal Assistant Chat](Screenshot%202025-07-23%20at%203.38.17%20AM.png)
-
-</div>
 
 ## ✨ Current Features
 
