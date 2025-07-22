@@ -12,7 +12,7 @@
 <div align="center">
 
 ### LLM Cost Calculator
-![LLM Cost Calculator](Screenshot%202025-07-23%20at%203.37.05%20AM.png)
+![LLM Cost Calculator](Screenshot_2025-07-23_03-37-05_AM.png)
 
 ### Usage Estimator
 ![Usage Estimator](Screenshot%202025-07-23%20at%203.37.26%20AM.png)
