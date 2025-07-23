@@ -37,7 +37,7 @@ function validateEnvironment(): EnvVars {
     return {
       // Required variables
       NEXTAUTH_SECRET: validateEnvVar('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET),
-      NEXTAUTH_URL: validateEnvVar('NEXTAUTH_URL', process.env.NEXTAUTH_URL || 'http://localhost:3000'),
+      NEXTAUTH_URL: validateEnvVar('NEXTAUTH_URL', process.env.NEXTAUTH_URL),
       GITHUB_ID: validateEnvVar('GITHUB_ID', process.env.GITHUB_ID),
       GITHUB_SECRET: validateEnvVar('GITHUB_SECRET', process.env.GITHUB_SECRET),
       MONGODB_URI: validateEnvVar('MONGODB_URI', process.env.MONGODB_URI),
