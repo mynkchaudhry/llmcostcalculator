@@ -8,6 +8,7 @@ import GlassCard from './ui/GlassCard';
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 interface ErrorBoundaryProps {
@@ -18,19 +19,34 @@ interface ErrorBoundaryProps {
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Handle chunk loading errors specifically
+    if (error.message?.includes('Loading chunk') || error.message?.includes('Loading CSS chunk')) {
+      console.log('Chunk loading error detected, attempting page reload...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      return;
+    }
+    
+    this.setState({ errorInfo });
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
+  handleReload = () => {
+    window.location.reload();
   };
 
   render() {
@@ -71,6 +87,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               >
                 <RefreshCcw className="h-4 w-4" />
                 Try Again
+              </Button>
+              
+              <Button 
+                onClick={this.handleReload}
+                variant="secondary"
+                className="w-full"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Reload Page
               </Button>
               
               <Button 
