@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function PUT(
     await connectToDatabase();
     
     const modelData = await request.json();
-    const modelId = params.id;
+    const { id: modelId } = await params;
     
     const updatedModel = await UserModel.findOneAndUpdate(
       { 
@@ -69,7 +69,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -82,7 +82,7 @@ export async function DELETE(
 
     await connectToDatabase();
     
-    const modelId = params.id;
+    const { id: modelId } = await params;
     
     const deletedModel = await UserModel.findOneAndDelete({
       userId: session.user.id,
