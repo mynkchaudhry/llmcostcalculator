@@ -7,6 +7,7 @@ import { CostCalculation } from '@/types';
 import GlassCard from './ui/GlassCard';
 import { formatCurrency } from '@/utils/formatting';
 import { fadeInUp } from '@/utils/animations';
+import ProviderLogo from './ProviderLogo';
 
 interface Recommendation {
   type: 'best-value' | 'most-efficient' | 'high-performance' | 'budget' | 'premium';
@@ -171,8 +172,9 @@ export default function ModelRecommendations({ calculations }: ModelRecommendati
                       </span>
                     </div>
                     
-                    <p className="font-semibold text-gray-900 dark:text-white mb-2">
-                      {rec.model.model.provider} {rec.model.model.name}
+                    <p className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center space-x-2">
+                      <ProviderLogo provider={rec.model.model.provider} size="sm" />
+                      <span>{rec.model.model.provider} {rec.model.model.name}</span>
                     </p>
                     
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">

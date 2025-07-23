@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import AuthProvider from '@/components/auth/AuthProvider';
-import Chatbot from '@/components/Chatbot';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import './globals.css';
 
@@ -47,9 +46,6 @@ export default function RootLayout({
               <div className="relative z-10">
                 {children}
               </div>
-
-              {/* Chatbot */}
-              <Chatbot />
             </div>
           </ErrorBoundary>
         </AuthProvider>

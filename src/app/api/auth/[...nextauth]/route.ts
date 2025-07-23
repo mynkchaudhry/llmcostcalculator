@@ -37,13 +37,21 @@ const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+      if (session.user && token.email) {
+        try {
+          await connectToDatabase();
+          const dbUser = await User.findOne({ email: token.email });
+          if (dbUser) {
+            session.user.id = dbUser._id.toString();
+          }
+        } catch (error) {
+          console.error('Session callback error:', error);
+        }
       }
       return session;
     },

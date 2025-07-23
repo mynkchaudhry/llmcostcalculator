@@ -2,9 +2,10 @@ export interface LLMModel {
   id: string;
   name: string;
   provider: string;
+  contextWindow: number;
+  modelType?: string;
   inputPrice: number; // Price per 1K input tokens
   outputPrice: number; // Price per 1K output tokens
-  contextWindow: number;
   currency: string;
   region?: string;
   notes?: string;
@@ -34,14 +35,11 @@ export interface CalculatorState {
 export interface ModelFormData {
   name: string;
   provider: string;
+  contextWindow: number;
+  modelType: string;
   inputPrice: number;
   outputPrice: number;
-  contextWindow: number;
   currency: string;
   region?: string;
   notes?: string;
-  features: string[];
-  isMultiModal: boolean;
-  isVisionEnabled: boolean;
-  isAudioEnabled: boolean;
 }

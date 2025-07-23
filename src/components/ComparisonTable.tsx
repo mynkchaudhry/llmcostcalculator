@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpDown, Trash2, Eye, EyeOff, BarChart3 } from 'lucide-react';
+import { ArrowUpDown, Trash2, Eye, EyeOff, BarChart3, Save, X } from 'lucide-react';
 import { useCalculatorStore } from '@/stores/useCalculatorStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { useHistoryStore } from '@/stores/useHistoryStore';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { CostCalculation } from '@/types';
 import GlassCard from './ui/GlassCard';
 import Button from './ui/Button';
 import AnimatedCounter from './ui/AnimatedCounter';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatting';
 import { fadeInUp, stagger } from '@/utils/animations';
+import ProviderLogo from './ProviderLogo';
 
 type SortField = 'model' | 'provider' | 'inputCost' | 'outputCost' | 'totalCost';
 type SortDirection = 'asc' | 'desc';
@@ -23,12 +26,20 @@ export default function ComparisonTable() {
     setSortField, 
     setSortDirection 
   } = useAppStore();
+  const { saveComparison } = useHistoryStore();
+  const { logComparison } = useActivityLogger();
   const [visibleColumns, setVisibleColumns] = useState({
     provider: true,
     inputCost: true,
     outputCost: true,
     totalCost: true,
     contextWindow: true,
+  });
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveData, setSaveData] = useState({
+    title: '',
+    description: '',
+    tags: '' as string,
   });
 
   if (calculations.length === 0) {
@@ -114,6 +125,40 @@ export default function ComparisonTable() {
     setVisibleColumns(prev => ({ ...prev, [column]: !prev[column] }));
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSaveComparison = async () => {
+    if (calculations.length === 0) {
+      setSaveError('No comparisons to save');
+      return;
+    }
+    
+    setIsSaving(true);
+    setSaveError(null);
+    
+    try {
+      const tags = saveData.tags ? saveData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      console.log('Saving with data:', { calculations, saveData, tags });
+      
+      await saveComparison(calculations, saveData.title || undefined, saveData.description || undefined, tags);
+      
+      // Log the saved comparison
+      logComparison(calculations, true);
+      
+      setShowSaveModal(false);
+      setSaveData({ title: '', description: '', tags: '' });
+      setIsSaving(false);
+      
+      // Show success feedback (you could add a toast here)
+      console.log('Comparison saved successfully!');
+    } catch (error: any) {
+      console.error('Failed to save comparison:', error);
+      setSaveError(error.message || 'Failed to save comparison');
+      setIsSaving(false);
+    }
+  };
+
   const cheapestTotal = Math.min(...calculations.map(calc => calc.totalCost));
   const mostExpensiveTotal = Math.max(...calculations.map(calc => calc.totalCost));
 
@@ -136,6 +181,15 @@ export default function ComparisonTable() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              {calculations.length > 0 && (
+                <Button variant="primary" size="sm" onClick={() => {
+                  setShowSaveModal(true);
+                  setSaveError(null);
+                }}>
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+              )}
               <div className="relative group">
                 <Button variant="secondary" size="sm">
                   <Eye className="h-4 w-4" />
@@ -238,7 +292,10 @@ export default function ComparisonTable() {
                       
                       {visibleColumns.provider && (
                         <td className="py-4 px-2 text-gray-600 dark:text-gray-400">
-                          {calculation.model.provider}
+                          <div className="flex items-center space-x-2">
+                            <ProviderLogo provider={calculation.model.provider} size="sm" />
+                            <span>{calculation.model.provider}</span>
+                          </div>
                         </td>
                       )}
                       
@@ -335,6 +392,110 @@ export default function ComparisonTable() {
           )}
         </GlassCard>
       </motion.div>
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowSaveModal(false)}
+          />
+          <div className="relative w-full max-w-md">
+            <GlassCard className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Save Comparison
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSaveModal(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Title (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={saveData.title}
+                    onChange={(e) => setSaveData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="e.g., GPT-4 vs Claude comparison"
+                    className="w-full rounded-2xl border-0 bg-white/10 backdrop-blur-md px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    value={saveData.description}
+                    onChange={(e) => setSaveData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Notes about this comparison..."
+                    rows={3}
+                    className="w-full rounded-2xl border-0 bg-white/10 backdrop-blur-md px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tags (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={saveData.tags}
+                    onChange={(e) => setSaveData(prev => ({ ...prev, tags: e.target.value }))}
+                    placeholder="e.g., work, analysis, budget"
+                    className="w-full rounded-2xl border-0 bg-white/10 backdrop-blur-md px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
+                </div>
+              </div>
+
+              {saveError && (
+                <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-xl">
+                  <p className="text-sm text-red-400">{saveError}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => {
+                    setShowSaveModal(false);
+                    setSaveError(null);
+                  }}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="primary" 
+                  onClick={handleSaveComparison}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Comparison
+                    </>
+                  )}
+                </Button>
+              </div>
+            </GlassCard>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

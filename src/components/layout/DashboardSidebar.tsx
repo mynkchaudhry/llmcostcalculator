@@ -10,7 +10,11 @@ import {
   User,
   TrendingUp,
   Menu,
-  X
+  X,
+  History,
+  Activity,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -44,6 +48,27 @@ const navigationItems = [
     label: 'Models',
     icon: Settings,
     description: 'Manage models',
+    type: 'tab'
+  },
+  {
+    id: 'history' as const,
+    label: 'History',
+    icon: History,
+    description: 'View past comparisons',
+    type: 'tab'
+  },
+  {
+    id: 'activity' as const,
+    label: 'Activity Log',
+    icon: FileText,
+    description: 'Detailed activity history',
+    type: 'tab'
+  },
+  {
+    id: 'advisor' as const,
+    label: 'AI Advisor',
+    icon: MessageSquare,
+    description: 'Infrastructure recommendations',
     type: 'tab'
   },
 ];

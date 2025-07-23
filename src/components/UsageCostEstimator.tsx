@@ -17,13 +17,16 @@ import {
   Download
 } from 'lucide-react';
 import { useModelStore } from '@/stores/useModelStore';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import GlassCard from './ui/GlassCard';
 import Button from './ui/Button';
+import ErrorDialog from './ui/ErrorDialog';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import AnimatedCounter from './ui/AnimatedCounter';
 import { formatCurrency } from '@/utils/formatting';
 import { fadeInUp, stagger } from '@/utils/animations';
+import ProviderLogo from './ProviderLogo';
 import { exportUsageEstimateToPDF, type UsageEstimateExportData } from '@/utils/pdfExport';
 
 interface UsageParams {
@@ -55,6 +58,7 @@ interface ScenarioComparison {
 
 export default function UsageCostEstimator() {
   const { models, fetchModels, isLoading } = useModelStore();
+  const { logEstimation } = useActivityLogger();
   const [selectedModelId, setSelectedModelId] = useState<string>('');
   const [usageParams, setUsageParams] = useState<UsageParams>({
     queriesPerDay: 100,
@@ -63,6 +67,10 @@ export default function UsageCostEstimator() {
     conversationHistoryTokens: 0,
   });
   const [showHistoryImpact, setShowHistoryImpact] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
 
   useEffect(() => {
     if (models.length === 0) {
@@ -110,6 +118,26 @@ export default function UsageCostEstimator() {
     const withoutHistory = calculateCostBreakdown(usageParams, false);
     const withHistory = calculateCostBreakdown(usageParams, true);
     
+    // Log estimation when there's a valid model and meaningful usage
+    if (selectedModel && usageParams.queriesPerDay > 0) {
+      logEstimation(
+        selectedModel, 
+        {
+          dailyRequests: usageParams.queriesPerDay,
+          avgInputTokens: usageParams.inputTokensPerQuery,
+          avgOutputTokens: usageParams.outputTokensPerQuery,
+          peakMultiplier: usageParams.peakMultiplier || 1.5,
+        },
+        {
+          dailyCost: withoutHistory.dailyCost,
+          monthlyCost: withoutHistory.monthlyCost,
+          yearlyCost: withoutHistory.yearlyCost,
+          totalTokens: (usageParams.inputTokensPerQuery + usageParams.outputTokensPerQuery) * usageParams.queriesPerDay,
+        },
+        usageParams.timeframe || 30
+      );
+    }
+    
     return {
       withoutHistory,
       withHistory,
@@ -119,7 +147,7 @@ export default function UsageCostEstimator() {
         yearly: withHistory.yearlyCost - withoutHistory.yearlyCost,
       }
     };
-  }, [usageParams, selectedModel, calculateCostBreakdown]);
+  }, [usageParams, selectedModel, calculateCostBreakdown, logEstimation]);
 
   const modelOptions = [
     { value: '', label: isLoading ? 'Loading models...' : models.length === 0 ? 'No models available' : 'Select a model...' },
@@ -176,7 +204,7 @@ export default function UsageCostEstimator() {
     } catch (error) {
       console.error('Failed to export PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to export PDF. Please try again.';
-      alert(errorMessage);
+      setErrorDialog({ isOpen: true, message: errorMessage });
     }
   };
 
@@ -549,8 +577,10 @@ export default function UsageCostEstimator() {
               {selectedModel.name} Pricing Details
             </h3>
             <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
-              <div>
-                <span className="font-medium">Provider:</span> {selectedModel.provider}
+              <div className="flex items-center space-x-1">
+                <span className="font-medium">Provider:</span>
+                <ProviderLogo provider={selectedModel.provider} size="sm" />
+                <span>{selectedModel.provider}</span>
               </div>
               <div>
                 <span className="font-medium">Input Price:</span> 
@@ -576,6 +606,13 @@ export default function UsageCostEstimator() {
           </GlassCard>
         </motion.div>
       )}
+
+      <ErrorDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog({ isOpen: false, message: '' })}
+        title="Export Failed"
+        message={errorDialog.message}
+      />
     </motion.div>
   );
 }

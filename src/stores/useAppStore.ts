@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface AppStore {
-  currentTab: 'calculator' | 'estimator' | 'comparison' | 'management' | 'profile';
+  currentTab: 'calculator' | 'estimator' | 'comparison' | 'management' | 'history' | 'activity' | 'advisor' | 'profile';
   searchQuery: string;
   providerFilter: string;
   sortField: string;
   sortDirection: 'asc' | 'desc';
   
-  setCurrentTab: (tab: 'calculator' | 'estimator' | 'comparison' | 'management' | 'profile') => void;
+  setCurrentTab: (tab: 'calculator' | 'estimator' | 'comparison' | 'management' | 'history' | 'activity' | 'advisor' | 'profile') => void;
   setSearchQuery: (query: string) => void;
   setProviderFilter: (provider: string) => void;
   setSortField: (field: string) => void;

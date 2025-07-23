@@ -1,30 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Plus, ArrowRight, ArrowLeft, Check, Bot, DollarSign, Settings, Sparkles } from 'lucide-react';
+import { X, Check, Bot, DollarSign, ChevronDown } from 'lucide-react';
 import { useModelStore } from '@/stores/useModelStore';
 import { ModelFormData } from '@/types';
 import GlassCard from './ui/GlassCard';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
+import ProviderLogo from './ProviderLogo';
 
 const modelSchema = z.object({
   name: z.string().min(1, 'Model name is required'),
   provider: z.string().min(1, 'Provider is required'),
+  contextWindow: z.number().min(1, 'Context window must be at least 1'),
+  modelType: z.string().min(1, 'Model type is required'),
   inputPrice: z.number().min(0, 'Input price must be positive'),
   outputPrice: z.number().min(0, 'Output price must be positive'),
-  contextWindow: z.number().min(1, 'Context window must be at least 1'),
   currency: z.string().min(1, 'Currency is required'),
   region: z.string().optional(),
   notes: z.string().optional(),
-  features: z.array(z.string()).default([]),
-  isMultiModal: z.boolean().default(false),
-  isVisionEnabled: z.boolean().default(false),
-  isAudioEnabled: z.boolean().default(false),
+});
+
+// Step-specific schemas for validation
+const step1Schema = modelSchema.pick({
+  name: true,
+  provider: true,
+  contextWindow: true,
+  modelType: true,
+});
+
+const step2Schema = modelSchema.pick({
+  inputPrice: true,
+  outputPrice: true,
+  currency: true,
 });
 
 interface ModelFormProps {
@@ -33,41 +45,16 @@ interface ModelFormProps {
   editingModel?: any;
 }
 
-const steps = [
-  {
-    id: 'basic',
-    title: 'Basic Info',
-    description: 'Model name and provider',
-    icon: Bot,
-  },
-  {
-    id: 'pricing',
-    title: 'Pricing',
-    description: 'Token costs and currency',
-    icon: DollarSign,
-  },
-  {
-    id: 'settings',
-    title: 'Settings',
-    description: 'Context window and region',
-    icon: Settings,
-  },
-  {
-    id: 'features',
-    title: 'Features',
-    description: 'Capabilities and notes',
-    icon: Sparkles,
-  },
-];
+// Removed steps - now single form
 
 const providerOptions = [
-  { value: '', label: 'Select provider...' },
-  { value: 'OpenAI', label: 'OpenAI' },
-  { value: 'Anthropic', label: 'Anthropic' },
-  { value: 'Google', label: 'Google' },
-  { value: 'Meta', label: 'Meta' },
-  { value: 'Mistral', label: 'Mistral' },
-  { value: 'Other', label: 'Other' },
+  { value: '', label: 'Select provider...', logo: null },
+  { value: 'OpenAI', label: 'OpenAI', logo: <ProviderLogo provider="OpenAI" size="sm" /> },
+  { value: 'Anthropic', label: 'Anthropic', logo: <ProviderLogo provider="Anthropic" size="sm" /> },
+  { value: 'Google', label: 'Google', logo: <ProviderLogo provider="Google" size="sm" /> },
+  { value: 'Meta', label: 'Meta', logo: <ProviderLogo provider="Meta" size="sm" /> },
+  { value: 'Mistral', label: 'Mistral', logo: <ProviderLogo provider="Mistral" size="sm" /> },
+  { value: 'Other', label: 'Other', logo: <ProviderLogo provider="Other" size="sm" /> },
 ];
 
 const currencyOptions = [
@@ -76,10 +63,33 @@ const currencyOptions = [
   { value: 'GBP', label: 'GBP (£)' },
 ];
 
+const modelTypeOptions = [
+  { value: '', label: 'Select model type...' },
+  { value: 'Chat', label: 'Chat (Text-only)' },
+  { value: 'Multimodal', label: 'Multimodal (Text + Images)' },
+  { value: 'Vision', label: 'Vision (Image Analysis)' },
+  { value: 'Audio', label: 'Audio (Speech/Sound)' },
+  { value: 'Code', label: 'Code Generation' },
+  { value: 'Embedding', label: 'Text Embeddings' },
+  { value: 'Other', label: 'Other/Custom' },
+];
+
 export default function ModelForm({ isOpen, onClose, editingModel }: ModelFormProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [newFeature, setNewFeature] = useState('');
+  const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
   const { addModel, updateModel } = useModelStore();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isProviderDropdownOpen && !target.closest('.provider-dropdown')) {
+        setIsProviderDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isProviderDropdownOpen]);
 
   const {
     register,
@@ -87,221 +97,215 @@ export default function ModelForm({ isOpen, onClose, editingModel }: ModelFormPr
     watch,
     setValue,
     reset,
+    trigger,
     formState: { errors, isValid },
   } = useForm<ModelFormData>({
     resolver: zodResolver(modelSchema),
+    mode: 'onChange',
     defaultValues: {
-      name: '',
-      provider: '',
-      inputPrice: 0,
-      outputPrice: 0,
-      contextWindow: 4096,
-      currency: 'USD',
-      region: '',
-      notes: '',
-      features: [],
-      isMultiModal: false,
-      isVisionEnabled: false,
-      isAudioEnabled: false,
+      name: editingModel?.name || '',
+      provider: editingModel?.provider || '',
+      contextWindow: editingModel?.contextWindow || 4096,
+      modelType: editingModel?.modelType || '',
+      inputPrice: editingModel?.inputPrice || 0,
+      outputPrice: editingModel?.outputPrice || 0,
+      currency: editingModel?.currency || 'USD',
+      region: editingModel?.region || '',
+      notes: editingModel?.notes || '',
     },
   });
 
-  const watchedFeatures = watch('features') || [];
 
-  const onSubmit = (data: ModelFormData) => {
+  // Reset form when editingModel changes
+  useEffect(() => {
     if (editingModel) {
-      updateModel(editingModel.id, data);
+      reset({
+        name: editingModel.name || '',
+        provider: editingModel.provider || '',
+        contextWindow: editingModel.contextWindow || 4096,
+        modelType: editingModel.modelType || '',
+        inputPrice: editingModel.inputPrice || 0,
+        outputPrice: editingModel.outputPrice || 0,
+        currency: editingModel.currency || 'USD',
+        region: editingModel.region || '',
+        notes: editingModel.notes || '',
+      });
     } else {
-      addModel(data);
+      reset({
+        name: '',
+        provider: '',
+        contextWindow: 4096,
+        modelType: '',
+        inputPrice: 0,
+        outputPrice: 0,
+        currency: 'USD',
+        region: '',
+        notes: '',
+      });
     }
-    handleClose();
+  }, [editingModel, reset]);
+
+  const onSubmit = async (data: ModelFormData) => {
+    try {
+      if (editingModel) {
+        await updateModel(editingModel.id, data);
+      } else {
+        await addModel(data);
+      }
+      handleClose();
+    } catch (error) {
+      console.error('Error saving model:', error);
+      // Error is already handled in the store, just prevent form close
+    }
   };
 
   const handleClose = () => {
-    setCurrentStep(0);
     reset();
-    setNewFeature('');
     onClose();
   };
 
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const addFeature = () => {
-    if (newFeature.trim() && !watchedFeatures.includes(newFeature.trim())) {
-      setValue('features', [...watchedFeatures, newFeature.trim()]);
-      setNewFeature('');
-    }
-  };
-
-  const removeFeature = (feature: string) => {
-    setValue('features', watchedFeatures.filter(f => f !== feature));
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-4">
-            <Input
-              label="Model Name"
-              {...register('name')}
-              error={errors.name?.message}
-              placeholder="e.g., GPT-4 Turbo"
-            />
-            <Select
-              label="Provider"
-              {...register('provider')}
-              options={providerOptions}
-              error={errors.provider?.message}
-            />
-          </div>
-        );
-
-      case 1:
-        return (
-          <div className="space-y-4">
-            <Input
-              label="Input Price (per 1M tokens)"
-              type="number"
-              step="0.01"
-              {...register('inputPrice', { valueAsNumber: true })}
-              error={errors.inputPrice?.message}
-              placeholder="10.00"
-            />
-            <Input
-              label="Output Price (per 1M tokens)"
-              type="number"
-              step="0.01"
-              {...register('outputPrice', { valueAsNumber: true })}
-              error={errors.outputPrice?.message}
-              placeholder="30.00"
-            />
-            <Select
-              label="Currency"
-              {...register('currency')}
-              options={currencyOptions}
-              error={errors.currency?.message}
-            />
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-4">
-            <Input
-              label="Context Window"
-              type="number"
-              {...register('contextWindow', { valueAsNumber: true })}
-              error={errors.contextWindow?.message}
-              placeholder="128000"
-            />
-            <Input
-              label="Region (optional)"
-              {...register('region')}
-              error={errors.region?.message}
-              placeholder="e.g., US, EU"
-            />
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Capabilities</p>
-              <div className="space-y-2">
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    {...register('isMultiModal')}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Multi-modal</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    {...register('isVisionEnabled')}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Vision</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    {...register('isAudioEnabled')}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Audio</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Features
-              </label>
-              <div className="flex space-x-2 mb-3">
-                <Input
-                  value={newFeature}
-                  onChange={(e) => setNewFeature(e.target.value)}
-                  placeholder="Add a feature..."
-                  className="flex-1"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addFeature();
-                    }
-                  }}
-                />
-                <Button variant="secondary" onClick={addFeature}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {watchedFeatures.map((feature) => (
-                  <span
-                    key={feature}
-                    className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm"
-                  >
-                    <span>{feature}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFeature(feature)}
-                      className="hover:bg-blue-500/30 rounded-full p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+  const renderFormContent = () => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left Column - Basic Info */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <Bot className="h-4 w-4 mr-2" />
+            Basic Information
+          </h3>
+          
+          <Input
+            label="Model Name"
+            {...register('name')}
+            error={errors.name?.message}
+            placeholder="e.g., GPT-4 Turbo"
+          />
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Platform/Provider
+            </label>
+            <div className="relative provider-dropdown">
+              <button
+                type="button"
+                onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
+                className={`
+                  w-full rounded-2xl border-0 bg-white/10 backdrop-blur-md
+                  px-4 py-3 text-left text-gray-900 dark:text-white
+                  ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500/50
+                  transition-all duration-200 flex items-center justify-between
+                  ${errors.provider ? 'ring-red-500/50' : ''}
+                `}
+              >
+                <span className="flex items-center space-x-2">
+                  {watch('provider') && <ProviderLogo provider={watch('provider')} size="sm" />}
+                  <span className="text-gray-900 dark:text-white">
+                    {providerOptions.find(opt => opt.value === watch('provider'))?.label || 'Select platform...'}
                   </span>
-                ))}
-              </div>
+                </span>
+                <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isProviderDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isProviderDropdownOpen && (
+                <div className="absolute z-20 w-full mt-1 bg-gray-800 rounded-xl shadow-lg border border-white/10 overflow-hidden max-h-60 overflow-y-auto">
+                  {providerOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setValue('provider', option.value);
+                        setIsProviderDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center space-x-2 text-gray-200"
+                    >
+                      {option.logo}
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notes (optional)
-              </label>
-              <textarea
-                {...register('notes')}
-                rows={3}
-                className="w-full rounded-2xl border-0 bg-white/10 backdrop-blur-md px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                placeholder="Additional notes about this model..."
-              />
-            </div>
+            {errors.provider?.message && (
+              <p className="text-sm text-red-500">{errors.provider.message}</p>
+            )}
           </div>
-        );
 
-      default:
-        return null;
-    }
+          <Input
+            label="Context Window (tokens)"
+            type="number"
+            min="1"
+            {...register('contextWindow', { 
+              valueAsNumber: true,
+              setValueAs: (value) => value === '' ? 4096 : parseInt(value) || 4096
+            })}
+            error={errors.contextWindow?.message}
+            placeholder="e.g., 128000"
+          />
+
+          <Select
+            label="Model Type"
+            {...register('modelType')}
+            options={modelTypeOptions}
+            error={errors.modelType?.message}
+          />
+        </div>
+
+        {/* Right Column - Pricing */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Pricing Information
+          </h3>
+          
+          <Input
+            label="Input Price (per 1M tokens)"
+            type="number"
+            step="0.01"
+            min="0"
+            {...register('inputPrice', { 
+              valueAsNumber: true,
+              setValueAs: (value) => value === '' ? 0 : parseFloat(value) || 0
+            })}
+            error={errors.inputPrice?.message}
+            placeholder="10.00"
+          />
+          
+          <Input
+            label="Output Price (per 1M tokens)"
+            type="number"
+            step="0.01"
+            min="0"
+            {...register('outputPrice', { 
+              valueAsNumber: true,
+              setValueAs: (value) => value === '' ? 0 : parseFloat(value) || 0
+            })}
+            error={errors.outputPrice?.message}
+            placeholder="30.00"
+          />
+          
+          <Select
+            label="Currency"
+            {...register('currency')}
+            options={currencyOptions}
+            error={errors.currency?.message}
+          />
+          
+          <Input
+            label="Region (optional)"
+            {...register('region')}
+            error={errors.region?.message}
+            placeholder="e.g., US, EU"
+          />
+
+          <Input
+            label="Notes (optional)"
+            {...register('notes')}
+            error={errors.notes?.message}
+            placeholder="Additional information about this model"
+          />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -313,94 +317,40 @@ export default function ModelForm({ isOpen, onClose, editingModel }: ModelFormPr
             onClick={handleClose}
           />
           <div
-            className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
+            className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden"
           >
-            <GlassCard className="p-0">
-              <div className="p-3 border-b border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+            <GlassCard className="p-0" hover={false}>
+              <div className="p-4 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                     {editingModel ? 'Edit Model' : 'Add New Model'}
                   </h2>
                   <Button variant="ghost" onClick={handleClose} size="sm">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-
-                {/* Progress Steps */}
-                <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-                  {steps.map((step, index) => {
-                    const Icon = step.icon;
-                    const isActive = index === currentStep;
-                    const isCompleted = index < currentStep;
-                    
-                    return (
-                      <div key={step.id} className="flex items-center flex-shrink-0">
-                        <div
-                          className={`
-                            flex items-center justify-center w-6 h-6 rounded-full transition-all duration-200
-                            ${isActive ? 'bg-blue-500 text-white' : 
-                              isCompleted ? 'bg-green-500 text-white' : 
-                              'bg-white/10 text-gray-400'}
-                          `}
-                        >
-                          {isCompleted ? (
-                            <Check className="h-2 w-2" />
-                          ) : (
-                            <Icon className="h-2 w-2" />
-                          )}
-                        </div>
-                        {index < steps.length - 1 && (
-                          <div className={`
-                            w-4 h-0.5 mx-1 transition-colors duration-200
-                            ${isCompleted ? 'bg-green-500' : 'bg-white/20'}
-                          `} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-full">
-                <div className="px-3 py-2">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-1">
-                    {steps[currentStep].title}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {steps[currentStep].description}
-                  </p>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {renderFormContent()}
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-3 pb-3">
-                  <div className="space-y-2">
-                    {renderStepContent()}
-                  </div>
-                </div>
-
-                <div className="flex justify-between border-t border-white/10 px-3 py-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={prevStep}
-                    disabled={currentStep === 0}
-                    size="sm"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Previous</span>
-                  </Button>
-                  
-                  {currentStep === steps.length - 1 ? (
+                <div className="flex justify-end border-t border-white/10 p-4">
+                  <div className="flex space-x-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleClose}
+                      size="sm"
+                    >
+                      Cancel
+                    </Button>
                     <Button type="submit" disabled={!isValid} size="sm">
-                      <Check className="h-4 w-4" />
-                      <span className="hidden sm:inline">{editingModel ? 'Update' : 'Add'} Model</span>
-                      <span className="sm:hidden">{editingModel ? 'Update' : 'Add'}</span>
+                      <Check className="h-4 w-4 mr-2" />
+                      {editingModel ? 'Update' : 'Add'} Model
                     </Button>
-                  ) : (
-                    <Button type="button" onClick={nextStep} size="sm">
-                      <span className="hidden sm:inline">Next</span>
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
+                  </div>
                 </div>
               </form>
             </GlassCard>

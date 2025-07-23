@@ -6,6 +6,7 @@ import { Calculator, Plus, Minus } from 'lucide-react';
 import { useModelStore } from '@/stores/useModelStore';
 import { useCalculatorStore } from '@/stores/useCalculatorStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import GlassCard from './ui/GlassCard';
 import Button from './ui/Button';
 import Input from './ui/Input';
@@ -28,6 +29,7 @@ export default function CostCalculator() {
     addToComparison,
   } = useCalculatorStore();
   const { compactMode, enableAnimations, containerMaxWidth } = useUIStore();
+  const { logCalculation, logComparison } = useActivityLogger();
 
   useEffect(() => {
     // Ensure models are loaded - fallback to default models if needed
@@ -39,8 +41,14 @@ export default function CostCalculator() {
   const [currentCalculation, setCurrentCalculation] = useState(calculateCost());
 
   useEffect(() => {
-    setCurrentCalculation(calculateCost());
-  }, [selectedModel, inputTokens, outputTokens, calculateCost]);
+    const calculation = calculateCost();
+    setCurrentCalculation(calculation);
+    
+    // Log calculation when there's a valid model and tokens
+    if (selectedModel && (inputTokens > 0 || outputTokens > 0)) {
+      logCalculation(selectedModel, inputTokens, outputTokens);
+    }
+  }, [selectedModel, inputTokens, outputTokens, calculateCost, logCalculation]);
 
   const handleModelSelect = (modelId: string) => {
     if (!modelId) {
@@ -54,6 +62,8 @@ export default function CostCalculator() {
   const handleAddToComparison = () => {
     if (currentCalculation) {
       addToComparison(currentCalculation);
+      // Log comparison addition
+      logComparison([currentCalculation], false);
     }
   };
 

@@ -10,6 +10,9 @@ import ComprehensiveComparison from '../ComprehensiveComparison';
 import ModelManagement from '../ModelManagement';
 import CostVisualization from '../CostVisualization';
 import ProfilePage from '../ProfilePage';
+import ComparisonHistory from '../ComparisonHistory';
+import ActivityHistory from '../ActivityHistory';
+import AIInfrastructureChatbot from '../AIInfrastructureChatbot';
 
 export default function DashboardContent() {
   const { currentTab } = useAppStore();
@@ -37,6 +40,12 @@ export default function DashboardContent() {
         return <ComprehensiveComparison />;
       case 'management':
         return <ModelManagement />;
+      case 'history':
+        return <ComparisonHistory />;
+      case 'activity':
+        return <ActivityHistory />;
+      case 'advisor':
+        return <AIInfrastructureChatbot />;
       case 'profile':
         return <ProfilePage />;
       default:

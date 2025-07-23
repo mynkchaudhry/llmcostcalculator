@@ -11,8 +11,10 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import ModelForm from './ModelForm';
+import ConfirmDialog from './ui/ConfirmDialog';
 import { formatDate, formatNumber } from '@/utils/formatting';
 import { fadeInUp, stagger } from '@/utils/animations';
+import ProviderLogo from './ProviderLogo';
 
 export default function ModelManagement() {
   const { models, deleteModel } = useModelStore();
@@ -24,6 +26,10 @@ export default function ModelManagement() {
   } = useAppStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<LLMModel | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    model: LLMModel | null;
+  }>({ isOpen: false, model: null });
 
   const { providerOptions, filteredModels } = useMemo(() => {
     const uniqueProviders = Array.from(new Set(models.map(model => model.provider))).sort();
@@ -51,10 +57,19 @@ export default function ModelManagement() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this model?')) {
-      deleteModel(id);
+  const handleDeleteClick = (model: LLMModel) => {
+    setDeleteDialog({ isOpen: true, model });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteDialog.model) {
+      deleteModel(deleteDialog.model.id);
+      setDeleteDialog({ isOpen: false, model: null });
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ isOpen: false, model: null });
   };
 
   const handleCloseForm = () => {
@@ -107,134 +122,138 @@ export default function ModelManagement() {
             </div>
           </div>
 
-          <AnimatePresence mode="popLayout">
-            <div className="grid gap-4">
-              {filteredModels.length === 0 ? (
-                <motion.div 
-                  key="empty-state"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-12"
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredModels.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {searchQuery || providerFilter ? 'No Matching Models' : 'No Models Yet'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {searchQuery || providerFilter 
+                    ? 'Try adjusting your search or filter to find models.' 
+                    : 'Use the "Add Model" button above to get started.'}
+                </p>
+              </div>
+            ) : (
+              filteredModels.map((model) => (
+                <motion.div
+                  key={`model-${model.id}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
                 >
-                  <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400 opacity-50" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {searchQuery || providerFilter ? 'No Matching Models' : 'No Models Yet'}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {searchQuery || providerFilter 
-                      ? 'Try adjusting your search or filter to find models.' 
-                      : 'Use the "Add Model" button above to get started.'}
-                  </p>
-                </motion.div>
-              ) : (
-                filteredModels.map((model) => (
-                  <motion.div
-                    key={`model-${model.id}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    layout
-                  >
-                    <GlassCard hover={false} className="p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <GlassCard hover className="p-4 h-full">
+                    <div className="flex flex-col h-full">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate mb-1">
                             {model.name}
                           </h3>
-                          <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs font-medium">
-                            {model.provider}
-                          </span>
-                          {model.isMultiModal && (
-                            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs">
-                              Multi-modal
+                          <div className="flex items-center space-x-2">
+                            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md text-xs font-medium flex items-center space-x-1">
+                              <ProviderLogo provider={model.provider} size="sm" />
+                              <span>{model.provider}</span>
                             </span>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3 text-xs">
-                          <div>
-                            <span className="text-xs text-gray-600 dark:text-gray-400 block">Input:</span>
-                            <p className="font-medium text-green-400 text-xs">
-                              ${model.inputPrice.toFixed(2)}/1M
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-600 dark:text-gray-400 block">Output:</span>
-                            <p className="font-medium text-blue-400 text-xs">
-                              ${model.outputPrice.toFixed(2)}/1M
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-600 dark:text-gray-400 block">Context:</span>
-                            <p className="font-medium text-gray-900 dark:text-white text-xs">
-                              {formatNumber(model.contextWindow)}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-600 dark:text-gray-400 block">Updated:</span>
-                            <p className="font-medium text-gray-900 dark:text-white text-xs">
-                              {model.lastUpdated ? formatDate(model.lastUpdated) : 'Unknown'}
-                            </p>
+                            {model.isMultiModal && (
+                              <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-md text-xs">
+                                Multi-modal
+                              </span>
+                            )}
                           </div>
                         </div>
-
-                        {model.features && model.features.length > 0 && (
-                          <div className="mb-2">
-                            <div className="flex flex-wrap gap-1.5">
-                              {model.features.slice(0, 2).map((feature) => (
-                                <span
-                                  key={feature}
-                                  className="px-1 py-0.5 bg-green-500/20 text-green-300 rounded text-xs"
-                                >
-                                  {feature}
-                                </span>
-                              ))}
-                              {model.features.length > 2 && (
-                                <span className="text-xs text-gray-500">
-                                  +{model.features.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {model.notes && (
-                          <div>
-                            <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-1">{model.notes}</p>
-                          </div>
-                        )}
                       </div>
 
-                        <div className="flex sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0 mt-3 sm:mt-0">
+                      {/* Pricing Grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-green-500/10 rounded-lg p-2">
+                          <span className="text-xs text-green-400 block mb-1">Input Price</span>
+                          <p className="font-semibold text-green-400 text-sm">
+                            ${model.inputPrice.toFixed(2)}/1M
+                          </p>
+                        </div>
+                        <div className="bg-blue-500/10 rounded-lg p-2">
+                          <span className="text-xs text-blue-400 block mb-1">Output Price</span>
+                          <p className="font-semibold text-blue-400 text-sm">
+                            ${model.outputPrice.toFixed(2)}/1M
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400 block mb-1">Context Window</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {formatNumber(model.contextWindow)}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400 block mb-1">Last Updated</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {model.lastUpdated ? formatDate(model.lastUpdated) : 'Unknown'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Features */}
+                      {model.features && model.features.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {model.features.slice(0, 3).map((feature) => (
+                              <span
+                                key={feature}
+                                className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                            {model.features.length > 3 && (
+                              <span className="text-xs text-gray-500 px-2 py-1">
+                                +{model.features.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notes */}
+                      {model.notes && (
+                        <div className="mb-3 flex-1">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                            {model.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex space-x-2 mt-auto pt-2">
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => handleEdit(model)}
-                          className="min-w-[60px] justify-center text-xs py-1.5 px-3 flex items-center"
+                          className="flex-1 justify-center"
                         >
                           <Edit className="h-3 w-3 mr-1" />
-                          <span className="text-xs">Edit</span>
+                          Edit
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(model.id)}
-                          className="min-w-[60px] justify-center text-xs py-1.5 px-3 bg-red-500/10 text-red-400 hover:text-red-300 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 transition-all duration-200 flex items-center"
+                          onClick={() => handleDeleteClick(model)}
+                          className="flex-1 justify-center bg-red-500/10 text-red-400 hover:text-red-300 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
-                          <span className="text-xs">Delete</span>
+                          Delete
                         </Button>
-                        </div>
                       </div>
+                    </div>
                   </GlassCard>
                 </motion.div>
-                ))
-              )}
-            </div>
-          </AnimatePresence>
+              ))
+            )}
+          </div>
         </GlassCard>
       </motion.div>
 
@@ -242,6 +261,17 @@ export default function ModelManagement() {
         isOpen={isFormOpen}
         onClose={handleCloseForm}
         editingModel={editingModel}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Model"
+        message={`Are you sure you want to delete "${deleteDialog.model?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
       />
     </motion.div>
   );

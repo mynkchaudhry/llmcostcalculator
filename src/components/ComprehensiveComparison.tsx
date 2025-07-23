@@ -20,6 +20,7 @@ import {
 import { useCalculatorStore } from '@/stores/useCalculatorStore';
 import GlassCard from './ui/GlassCard';
 import Button from './ui/Button';
+import ErrorDialog from './ui/ErrorDialog';
 import AnimatedCounter from './ui/AnimatedCounter';
 import ComparisonTable from './ComparisonTable';
 import AdvancedCharts from './AdvancedCharts';
@@ -40,6 +41,10 @@ export default function ComprehensiveComparison() {
   const { calculations, clearComparisons } = useCalculatorStore();
   const [activeView, setActiveView] = useState<'table' | 'charts' | 'insights'>('table');
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
 
   const analysisData = useMemo(() => {
     if (calculations.length === 0) return null;
@@ -157,7 +162,7 @@ export default function ComprehensiveComparison() {
     } catch (error) {
       console.error('Failed to export PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to export PDF. Please try again.';
-      alert(errorMessage);
+      setErrorDialog({ isOpen: true, message: errorMessage });
     }
   };
 
@@ -440,6 +445,13 @@ export default function ComprehensiveComparison() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      <ErrorDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog({ isOpen: false, message: '' })}
+        title="Export Failed"
+        message={errorDialog.message}
+      />
     </motion.div>
   );
 }
