@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import AuthProvider from '@/components/auth/AuthProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import ClientErrorHandler from '@/components/ClientErrorHandler';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -37,7 +36,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen`}>
-        <ClientErrorHandler />
         <AuthProvider>
           <ErrorBoundary>
             <div className="relative min-h-screen">

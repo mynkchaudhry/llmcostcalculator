@@ -4,11 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "seed": "npx ts-node src/scripts/seedDatabase.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -36,7 +34,6 @@
     "rehype-highlight": "^7.0.2",
     "rehype-prism-plus": "^2.0.1",
     "remark-gfm": "^4.0.1",
-    "ts-node": "^10.9.2",
     "zod": "^4.0.5",
     "zustand": "^5.0.6"
   },
