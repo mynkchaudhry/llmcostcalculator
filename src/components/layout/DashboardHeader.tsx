@@ -6,6 +6,7 @@ import { Sparkles, Bell, User2 } from 'lucide-react';
 import UserMenu from '../auth/UserMenu';
 import GlassCard from '../ui/GlassCard';
 import Button from '../ui/Button';
+import GitHubBanner from '../GitHubBanner';
 
 export default function DashboardHeader() {
   const { data: session } = useSession();
@@ -61,6 +62,9 @@ export default function DashboardHeader() {
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">
+          {/* GitHub Stats Banner */}
+          <GitHubBanner className="hidden md:block" />
+          
           {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-5 w-5" />

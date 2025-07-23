@@ -91,12 +91,12 @@ export default function ActivityHistory() {
   });
 
   useEffect(() => {
-    fetchActivities();
+    fetchActivities(1, 6); // Show only 6 activities per page
     fetchAnalytics();
   }, [fetchActivities, fetchAnalytics]);
 
   const handlePageChange = (page: number) => {
-    fetchActivities(page, pagination.limit);
+    fetchActivities(page, 6); // Show only 6 activities per page
   };
 
   const handleDeleteClick = (id: string, type: string) => {
@@ -294,7 +294,7 @@ export default function ActivityHistory() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => fetchActivities()}
+              onClick={() => fetchActivities(1, 6)}
             >
               <RefreshCw className="h-4 w-4" />
               Refresh

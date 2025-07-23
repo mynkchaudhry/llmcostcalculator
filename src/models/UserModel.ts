@@ -9,13 +9,10 @@ export interface IUserModel {
   inputPrice: number;
   outputPrice: number;
   contextWindow: number;
+  modelType: string;
   currency: string;
   region?: string;
   notes?: string;
-  features?: string[];
-  isMultiModal?: boolean;
-  isVisionEnabled?: boolean;
-  isAudioEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +49,10 @@ const UserModelSchema = new mongoose.Schema<IUserModel>({
     required: true,
     min: 1,
   },
+  modelType: {
+    type: String,
+    required: true,
+  },
   currency: {
     type: String,
     required: true,
@@ -64,22 +65,6 @@ const UserModelSchema = new mongoose.Schema<IUserModel>({
   notes: {
     type: String,
     default: '',
-  },
-  features: {
-    type: [String],
-    default: [],
-  },
-  isMultiModal: {
-    type: Boolean,
-    default: false,
-  },
-  isVisionEnabled: {
-    type: Boolean,
-    default: false,
-  },
-  isAudioEnabled: {
-    type: Boolean,
-    default: false,
   },
 }, {
   timestamps: true,

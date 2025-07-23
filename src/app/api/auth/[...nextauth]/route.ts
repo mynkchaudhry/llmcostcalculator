@@ -4,7 +4,7 @@ import connectToDatabase from '@/lib/mongodb';
 import User from '@/models/User';
 import env from '@/lib/env';
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     GitHubProvider({
       clientId: env.GITHUB_ID,

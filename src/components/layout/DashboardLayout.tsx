@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             variants={fadeInUp}
             initial="initial"
             animate="animate"
-            className="max-w-7xl mx-auto"
+            className="max-w-7xl mx-auto mb-8"
           >
             {children}
           </motion.div>

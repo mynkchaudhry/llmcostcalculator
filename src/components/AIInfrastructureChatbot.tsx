@@ -148,13 +148,45 @@ export default function AIInfrastructureChatbot() {
   }>({ isOpen: false, sessionId: null, sessionTitle: '' });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { logActivity } = useActivityLogger();
+  
+  // Pagination state
+  const [sessionsPage, setSessionsPage] = useState(1);
+  const [messagesPage, setMessagesPage] = useState(1);
+  const sessionsPerPage = 10;
+  const messagesPerPage = 20;
 
   const currentSession = sessions.find(s => s.id === currentSessionId);
+
+  // Pagination calculations
+  const paginatedSessions = sessions.slice(
+    (sessionsPage - 1) * sessionsPerPage,
+    sessionsPage * sessionsPerPage
+  );
+  const totalSessionPages = Math.ceil(sessions.length / sessionsPerPage);
+  
+  const paginatedMessages = currentSession?.messages.slice(
+    (messagesPage - 1) * messagesPerPage,
+    messagesPage * messagesPerPage
+  ) || [];
+  const totalMessagePages = Math.ceil((currentSession?.messages.length || 0) / messagesPerPage);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentSession?.messages]);
+
+  // Reset messages pagination when switching sessions
+  useEffect(() => {
+    setMessagesPage(1);
+  }, [currentSessionId]);
+
+  // Go to last page when new message is added
+  useEffect(() => {
+    if (currentSession) {
+      const lastPage = Math.ceil(currentSession.messages.length / messagesPerPage);
+      setMessagesPage(lastPage);
+    }
+  }, [currentSession?.messages.length, messagesPerPage]);
 
   // Load chat history from database
   useEffect(() => {
@@ -435,8 +467,8 @@ export default function AIInfrastructureChatbot() {
             </h3>
           </div>
           
-          <div className="flex-1 space-y-2 overflow-y-auto">
-            {sessions.map((session) => (
+          <div className="flex-1 space-y-2 overflow-hidden">
+            {paginatedSessions.map((session) => (
               <div
                 key={session.id}
                 className={`p-3 rounded-xl cursor-pointer transition-all duration-200 group ${
@@ -473,6 +505,33 @@ export default function AIInfrastructureChatbot() {
               </div>
             ))}
           </div>
+          
+          {/* Sessions Pagination */}
+          {totalSessionPages > 1 && (
+            <div className="flex justify-center items-center space-x-2 p-2 border-t border-white/10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSessionsPage(prev => Math.max(1, prev - 1))}
+                disabled={sessionsPage === 1}
+                className="text-xs"
+              >
+                ←
+              </Button>
+              <span className="text-xs text-gray-500">
+                {sessionsPage}/{totalSessionPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSessionsPage(prev => Math.min(totalSessionPages, prev + 1))}
+                disabled={sessionsPage === totalSessionPages}
+                className="text-xs"
+              >
+                →
+              </Button>
+            </div>
+          )}
         </GlassCard>
       </motion.div>
 
@@ -543,7 +602,7 @@ export default function AIInfrastructureChatbot() {
               </div>
             ) : (
               <>
-                {currentSession?.messages.map((message) => (
+                {paginatedMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -792,6 +851,36 @@ export default function AIInfrastructureChatbot() {
               </>
             )}
           </div>
+
+          {/* Messages Pagination */}
+          {currentSession && totalMessagePages > 1 && (
+            <div className="flex justify-between items-center p-3 border-t border-white/10 bg-white/5">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setMessagesPage(prev => Math.max(1, prev - 1))}
+                disabled={messagesPage === 1}
+              >
+                ← Previous
+              </Button>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500">
+                  Page {messagesPage} of {totalMessagePages}
+                </span>
+                <span className="text-xs text-gray-600">
+                  Showing {((messagesPage - 1) * messagesPerPage) + 1} to {Math.min(messagesPage * messagesPerPage, currentSession.messages.length)} of {currentSession.messages.length} messages
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setMessagesPage(prev => Math.min(totalMessagePages, prev + 1))}
+                disabled={messagesPage === totalMessagePages}
+              >
+                Next →
+              </Button>
+            </div>
+          )}
 
           {/* Input - Fixed at bottom */}
           <div className="p-4 border-t border-white/10 flex-shrink-0">

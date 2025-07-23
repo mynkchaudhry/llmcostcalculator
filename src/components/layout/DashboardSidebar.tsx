@@ -14,7 +14,9 @@ import {
   History,
   Activity,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Star,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -200,25 +202,30 @@ export default function DashboardSidebar() {
                 </motion.div>
               );
             })}
+            
+            {/* GitHub Star Button */}
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <a
+                href="https://github.com/mynkchaudhry/llmcostcalculator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center space-x-3 p-4 rounded-2xl text-left transition-all duration-200 text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-yellow-500/20 hover:to-orange-500/20 border border-transparent hover:border-yellow-500/30 group"
+              >
+                <Star className="h-5 w-5 group-hover:text-yellow-400 transition-colors" />
+                <div className="flex-1 min-w-0 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium truncate">Star on GitHub</p>
+                    <p className="text-xs truncate text-gray-500 group-hover:text-yellow-100">
+                      Support the project
+                    </p>
+                  </div>
+                  <ExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:translate-x-1" />
+                </div>
+              </a>
+            </motion.div>
           </nav>
         </div>
 
-        {/* Quick Stats Card */}
-        <GlassCard className="p-4">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="p-2 rounded-full bg-gradient-to-r from-green-500 to-blue-500">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                Quick Tip
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            Compare multiple models to find the best cost-efficiency ratio for your use case.
-          </p>
-        </GlassCard>
       </div>
 
       {/* Footer */}

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import connectToDatabase from '@/lib/mongodb';
 import UserModel from '@/models/UserModel';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -49,14 +50,11 @@ export async function PUT(
         inputPrice: updatedModel.inputPrice,
         outputPrice: updatedModel.outputPrice,
         contextWindow: updatedModel.contextWindow,
+        modelType: updatedModel.modelType,
         currency: updatedModel.currency,
         region: updatedModel.region,
         notes: updatedModel.notes,
-        features: updatedModel.features,
         lastUpdated: updatedModel.updatedAt,
-        isMultiModal: updatedModel.isMultiModal,
-        isVisionEnabled: updatedModel.isVisionEnabled,
-        isAudioEnabled: updatedModel.isAudioEnabled,
         isCustom: true,
       }
     });
@@ -74,7 +72,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },

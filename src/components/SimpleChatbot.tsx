@@ -103,11 +103,28 @@ export default function SimpleChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const messagesPerPage = 20;
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(messages.length / messagesPerPage);
+  const paginatedMessages = messages.slice(
+    (currentPage - 1) * messagesPerPage,
+    currentPage * messagesPerPage
+  );
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Go to last page when new message is added
+  useEffect(() => {
+    const lastPage = Math.ceil(messages.length / messagesPerPage);
+    setCurrentPage(lastPage || 1);
+  }, [messages.length, messagesPerPage]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || !session?.user?.id) return;
@@ -230,7 +247,7 @@ export default function SimpleChatbot() {
             </div>
           ) : (
             <>
-              {messages.map((message) => (
+              {paginatedMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -368,6 +385,36 @@ export default function SimpleChatbot() {
             </>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center p-3 border-t border-white/10 bg-white/5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              ← Previous
+            </Button>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </span>
+              <span className="text-xs text-gray-600">
+                Showing {((currentPage - 1) * messagesPerPage) + 1} to {Math.min(currentPage * messagesPerPage, messages.length)} of {messages.length} messages
+              </span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next →
+            </Button>
+          </div>
+        )}
 
         {/* Input */}
         <div className="p-4 border-t border-white/10">

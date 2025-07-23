@@ -30,8 +30,10 @@ export default function ModelManagement() {
     isOpen: boolean;
     model: LLMModel | null;
   }>({ isOpen: false, model: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3 rows x 3 columns
 
-  const { providerOptions, filteredModels } = useMemo(() => {
+  const { providerOptions, filteredModels, paginatedModels, totalPages } = useMemo(() => {
     const uniqueProviders = Array.from(new Set(models.map(model => model.provider))).sort();
     const options = [
       { value: '', label: 'All Providers' },
@@ -46,11 +48,19 @@ export default function ModelManagement() {
       return matchesSearch && matchesProvider;
     });
 
+    // Calculate pagination
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedModels = filtered.slice(startIndex, endIndex);
+
     return {
       providerOptions: options,
-      filteredModels: filtered
+      filteredModels: filtered,
+      paginatedModels,
+      totalPages
     };
-  }, [models, searchQuery, providerFilter]);
+  }, [models, searchQuery, providerFilter, currentPage, itemsPerPage]);
 
   const handleEdit = (model: LLMModel) => {
     setEditingModel(model);
@@ -75,6 +85,20 @@ export default function ModelManagement() {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingModel(null);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  const handleFilterChange = (type: 'search' | 'provider', value: string) => {
+    setCurrentPage(1);
+    if (type === 'search') {
+      setSearchQuery(value);
+    } else {
+      setProviderFilter(value);
+    }
   };
 
   return (
@@ -109,7 +133,7 @@ export default function ModelManagement() {
               <Input
                 placeholder="Search models or providers..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
                 icon={<Search className="h-4 w-4" />}
               />
             </div>
@@ -117,13 +141,13 @@ export default function ModelManagement() {
               <Select
                 options={providerOptions}
                 value={providerFilter}
-                onChange={(e) => setProviderFilter(e.target.value)}
+                onChange={(e) => handleFilterChange('provider', e.target.value)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredModels.length === 0 ? (
+            {paginatedModels.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400 opacity-50" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -136,7 +160,7 @@ export default function ModelManagement() {
                 </p>
               </div>
             ) : (
-              filteredModels.map((model) => (
+              paginatedModels.map((model) => (
                 <motion.div
                   key={`model-${model.id}`}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -254,6 +278,52 @@ export default function ModelManagement() {
               ))
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-4 mt-6">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center space-x-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "primary" : "ghost"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="w-10 h-10 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+
+          {/* Results Summary */}
+          {filteredModels.length > 0 && (
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredModels.length)} of {filteredModels.length} models
+              </p>
+            </div>
+          )}
         </GlassCard>
       </motion.div>
 

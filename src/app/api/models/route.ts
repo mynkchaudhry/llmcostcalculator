@@ -4,6 +4,7 @@ import connectToDatabase from '@/lib/mongodb';
 import LLMModel from '@/models/LLMModel';
 import UserModel from '@/models/UserModel';
 import { defaultModels } from '@/data/models';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     let session = null;
     try {
       await connectToDatabase();
-      session = await getServerSession();
+      session = await getServerSession(authOptions);
     } catch (connectionError) {
       console.warn('Database connection failed, using default models:', connectionError);
       // Return default models if database connection fails
@@ -45,14 +46,11 @@ export async function GET(request: NextRequest) {
             inputPrice: model.inputPrice,
             outputPrice: model.outputPrice,
             contextWindow: model.contextWindow,
+            modelType: model.modelType,
             currency: model.currency,
             region: model.region,
             notes: model.notes,
-            features: model.features,
             lastUpdated: model.updatedAt,
-            isMultiModal: model.isMultiModal,
-            isVisionEnabled: model.isVisionEnabled,
-            isAudioEnabled: model.isAudioEnabled,
             isCustom: true,
           }))
         ];
@@ -83,14 +81,11 @@ export async function GET(request: NextRequest) {
             inputPrice: model.inputPrice,
             outputPrice: model.outputPrice,
             contextWindow: model.contextWindow,
+            modelType: model.modelType,
             currency: model.currency,
             region: model.region,
             notes: model.notes,
-            features: model.features,
             lastUpdated: model.updatedAt,
-            isMultiModal: model.isMultiModal,
-            isVisionEnabled: model.isVisionEnabled,
-            isAudioEnabled: model.isAudioEnabled,
             isCustom: true,
           }))
         ];
@@ -113,7 +108,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -142,14 +137,11 @@ export async function POST(request: NextRequest) {
           inputPrice: userModel.inputPrice,
           outputPrice: userModel.outputPrice,
           contextWindow: userModel.contextWindow,
+          modelType: userModel.modelType,
           currency: userModel.currency,
           region: userModel.region,
           notes: userModel.notes,
-          features: userModel.features,
           lastUpdated: userModel.updatedAt,
-          isMultiModal: userModel.isMultiModal,
-          isVisionEnabled: userModel.isVisionEnabled,
-          isAudioEnabled: userModel.isAudioEnabled,
           isCustom: true,
         }
       },
