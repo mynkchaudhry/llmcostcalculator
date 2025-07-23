@@ -4,12 +4,13 @@ import GitHubProvider from 'next-auth/providers/github';
 import User from '@/models/User';
 import connectToDatabase from '@/lib/mongodb';
 import Groq from 'groq-sdk';
+import env from '@/lib/env';
 
 const authOptions = {
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
+      clientId: env.GITHUB_ID,
+      clientSecret: env.GITHUB_SECRET,
     }),
   ],
   session: {
@@ -55,11 +56,11 @@ const authOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 };
 
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: env.GROQ_API_KEY,
 });
 
 const SYSTEM_PROMPT = `You are an AI infrastructure cost advisor. Provide detailed, practical recommendations in 150-200 words.

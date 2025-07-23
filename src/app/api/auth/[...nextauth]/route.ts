@@ -2,12 +2,13 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/models/User';
+import env from '@/lib/env';
 
 const authOptions: NextAuthOptions = {
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
+      clientId: env.GITHUB_ID,
+      clientSecret: env.GITHUB_SECRET,
     }),
   ],
   session: {
@@ -60,7 +61,7 @@ const authOptions: NextAuthOptions = {
     signIn: '/login',
     signUp: '/register',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

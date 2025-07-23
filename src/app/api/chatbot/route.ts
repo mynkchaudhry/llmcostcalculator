@@ -5,12 +5,13 @@ import User from '@/models/User';
 import connectToDatabase from '@/lib/mongodb';
 import Groq from 'groq-sdk';
 import { LinkupClient } from 'linkup-sdk';
+import env from '@/lib/env';
 
 const authOptions = {
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
+      clientId: env.GITHUB_ID,
+      clientSecret: env.GITHUB_SECRET,
     }),
   ],
   session: {
@@ -56,17 +57,17 @@ const authOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 };
 
 // Initialize Groq client
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: env.GROQ_API_KEY,
 });
 
 // Initialize Linkup client
 const linkupClient = new LinkupClient({
-  apiKey: process.env.LINKUP_API_KEY || '',
+  apiKey: env.LINKUP_API_KEY || '',
 });
 const ENHANCED_SYSTEM_PROMPT = `You are an **AI Solutions and Cost Advisor** with deep expertise in:
 
@@ -103,26 +104,7 @@ const ENHANCED_SYSTEM_PROMPT = `You are an **AI Solutions and Cost Advisor** wit
 
 YOUTUBE:Vector Database Explained|klTvEwg3oJ4`;
 
-function formatEnhancedPromptContent(rawContent) {
-  let content = rawContent;
-
-  // Fix headers that are missing blank lines after them
-  content = content.replace(/(#{1,3}\s+[^\n]+)\n([^#\n\s|])/g, '$1\n\n$2');
-
-  // Fix tables that are missing blank lines before them
-  content = content.replace(/([^\n])\n(\|[^|\n]*\|)/g, '$1\n\n$2');
-
-  // Fix tables that are missing blank lines after them
-  content = content.replace(/(\|[^|\n]*\|)\n([^|\n\s])/g, '$1\n\n$2');
-
-  // Clean up excessive blank lines (more than 2)
-  content = content.replace(/\n\s*\n\s*\n+/g, '\n\n');
-
-  // Trim whitespace from each line
-  content = content.split('\n').map(line => line.trim()).join('\n');
-
-  return content.trim(); // Final trim
-}
+// Removed unused formatEnhancedPromptContent function
 
 function fixMarkdownFormatting(content: string): string {
   let fixed = content;
@@ -143,9 +125,7 @@ function fixMarkdownFormatting(content: string): string {
   return fixed.trim();
 }
 
-// Usage example
-const formattedPrompt = formatEnhancedPromptContent(ENHANCED_SYSTEM_PROMPT);
-console.log(formattedPrompt);
+// Removed unused formattedPrompt variable and console.log
 
 
 // Web search function using Linkup
@@ -317,8 +297,11 @@ Instructions for using search results:
   } catch (error) {
     console.error('Groq API error:', error);
     
+    // Get userMessage for fallback
+    const fallbackUserMessage = messages[messages.length - 1]?.content || 'AI infrastructure pricing';
+    
     // Fallback response with Linkup search attempt
-    const fallbackLinkupResults = await performLinkupSearch(userMessage || 'AI infrastructure pricing');
+    const fallbackLinkupResults = await performLinkupSearch(fallbackUserMessage);
     const fallbackLinks = fallbackLinkupResults.sources.map(source => source.url).filter(url => url);
     
     return {

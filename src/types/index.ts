@@ -4,8 +4,8 @@ export interface LLMModel {
   provider: string;
   contextWindow: number;
   modelType?: string;
-  inputPrice: number; // Price per 1K input tokens
-  outputPrice: number; // Price per 1K output tokens
+  inputPrice: number; // Price per 1M input tokens
+  outputPrice: number; // Price per 1M output tokens
   currency: string;
   region?: string;
   notes?: string;
