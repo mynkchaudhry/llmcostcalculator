@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   description: 'Compare and calculate costs for multiple LLM APIs including OpenAI, Google, Anthropic, Meta, and more. Professional tool for AI developers and businesses.',
   keywords: 'LLM, AI, pricing, calculator, OpenAI, GPT, Claude, Gemini, API costs',
   authors: [{ name: 'LLM Calculator Team' }],
-  viewport: 'width=device-width, initial-scale=1',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -23,6 +22,11 @@ export const metadata: Metadata = {
       { url: '/favicon.svg', sizes: '180x180' },
     ],
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

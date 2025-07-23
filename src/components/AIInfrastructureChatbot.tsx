@@ -583,7 +583,7 @@ export default function AIInfrastructureChatbot() {
                     Welcome to AI Infrastructure Advisor
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                    I'll help you choose the best AI infrastructure for your project and estimate costs. 
+                    I&apos;ll help you choose the best AI infrastructure for your project and estimate costs. 
                     Ask me about vector databases, model hosting, embeddings, and more!
                   </p>
                 </div>

@@ -4,15 +4,17 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
   
-  // Optimize for production
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
-    // Disable turbopack for stability
-    turbo: {
-      rules: {
-        '*.tsx': {
-          loaders: ['@next/react-refresh-utils/loader'],
-        },
+  // Allow cross-origin requests for development
+  allowedDevOrigins: ['34.9.67.237:3000', 'localhost:3000'],
+  
+  // External packages for server components
+  serverExternalPackages: ['mongoose'],
+  
+  // Turbopack configuration (now stable)
+  turbopack: {
+    rules: {
+      '*.tsx': {
+        loaders: ['@next/react-refresh-utils/loader'],
       },
     },
   },
