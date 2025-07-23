@@ -1,0 +1,46 @@
+# Google App Engine configuration (alternative to Cloud Run)
+runtime: nodejs18
+
+# Environment variables
+env_variables:
+  NODE_ENV: "production"
+  # Add your environment variables here
+  # MONGODB_URI: "your-mongodb-connection-string"
+  # NEXTAUTH_SECRET: "your-nextauth-secret"
+  # NEXTAUTH_URL: "https://your-app-name.appspot.com"
+  # GITHUB_ID: "your-github-oauth-id"
+  # GITHUB_SECRET: "your-github-oauth-secret"
+  # GROQ_API_KEY: "your-groq-api-key"
+  # LINKUP_API_KEY: "your-linkup-api-key"
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+  target_cpu_utilization: 0.6
+
+# Resource allocation
+resources:
+  cpu: 1
+  memory_gb: 2
+  disk_size_gb: 10
+
+# Network settings
+network:
+  forwarded_ports:
+    - 3000
+
+# Health check
+readiness_check:
+  path: "/api/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+liveness_check:
+  path: "/api/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 4
+  success_threshold: 2
